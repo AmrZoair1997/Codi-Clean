@@ -132,9 +132,7 @@ and does not redistribute it.
 
 ## Contributing
 
-Issues and pull requests are welcome, especially new signatures for adware and
-unwanted programs (`codi_clean/signatures.py`) and bug reports with the exact
-command you ran. Please run the tests before opening a pull request.
+- - - -
 
 ## License
 
