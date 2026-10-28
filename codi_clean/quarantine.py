@@ -91,14 +91,18 @@ def quarantine(path: str, title: str, reason: str, root: str = QUARANTINE_DIR) -
         "mode": stat.S_IMODE(os.lstat(original).st_mode),
     }
     dest = os.path.join(folder, "item", os.path.basename(original))
+    # The manifest is written first: an item in quarantine without one would be
+    # invisible to the menu and could not be restored.
     try:
+        with open(os.path.join(folder, "manifest.json"), "w") as fh:
+            json.dump(manifest, fh, indent=2)
         shutil.move(original, dest)
     except OSError:
+        if not os.path.lexists(original) and os.path.lexists(dest):
+            raise
         shutil.rmtree(folder, ignore_errors=True)
         raise
     _strip_exec(dest)
-    with open(os.path.join(folder, "manifest.json"), "w") as fh:
-        json.dump(manifest, fh, indent=2)
     return Entry(folder, original, title, reason, manifest["quarantined_at"], size)
 
 
@@ -122,6 +126,8 @@ def entries(root: str = QUARANTINE_DIR) -> List[Entry]:
 
 def restore(entry: Entry) -> str:
     """Put the item back where it was. Raises OSError if something is there now."""
+    if not os.path.isabs(entry.original) or fsutil.protected_reason(entry.original):
+        raise OSError("refused: the recorded location {!r} is not safe to restore to".format(entry.original))
     if os.path.lexists(entry.original):
         raise FileExistsError("something already exists at " + entry.original)
     with open(os.path.join(entry.folder, "manifest.json")) as fh:
@@ -137,11 +143,11 @@ def restore(entry: Entry) -> str:
     return entry.original
 
 
-def purge(entry: Entry) -> None:
+def purge(entry: Entry, root: str = QUARANTINE_DIR) -> None:
     """Permanently delete a quarantined item. Cannot be undone."""
-    root = os.path.dirname(entry.folder)
-    if os.path.dirname(fsutil.norm(entry.folder)) != fsutil.norm(root) or \
-            not os.path.exists(os.path.join(entry.folder, "manifest.json")):
+    folder = fsutil.norm(entry.folder)
+    if os.path.islink(entry.folder) or os.path.dirname(folder) != fsutil.norm(root) or \
+            not os.path.isfile(os.path.join(folder, "manifest.json")):
         raise OSError("refused: not a Codi quarantine entry")
     for folder, dirs, files in os.walk(entry.folder):
         for name in dirs + files:
@@ -166,6 +172,7 @@ def run_quarantine_menu() -> None:
     print("\n  {} items, {} in total, stored in {}".format(len(items), ui.human_size(total),
                                                           QUARANTINE_DIR.replace(HOME, "~")))
     print("\n    r 2      restore item 2 to where it was")
+    print("    r all    restore everything")
     print("    p 2      permanently delete item 2")
     print("    p all    permanently delete everything in quarantine")
     print("    Enter    go back")
@@ -177,7 +184,7 @@ def run_quarantine_menu() -> None:
     if action not in ("r", "p"):
         print(ui.red("  Not a valid choice."))
         return
-    if action == "p" and which.strip().lower() == "all":
+    if which.strip().lower() == "all":
         chosen = list(range(len(items)))
     else:
         chosen = ui.parse_selection(which, len(items))

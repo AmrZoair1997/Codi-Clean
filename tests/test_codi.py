@@ -76,8 +76,49 @@ class QuarantineTests(unittest.TestCase):
 
     def test_purge(self):
         entry = quarantine.quarantine(self.victim, "evil", "test", root=self.root)
-        quarantine.purge(entry)
+        quarantine.purge(entry, root=self.root)
         self.assertFalse(os.path.exists(entry.folder))
+
+    def test_purge_refuses_folders_outside_quarantine(self):
+        outside = os.path.join(self.tmp.name, "not-quarantine")
+        os.makedirs(outside)
+        with open(os.path.join(outside, "manifest.json"), "w") as fh:
+            fh.write("{}")
+        fake = quarantine.Entry(outside, self.victim, "x", "y", "", 0)
+        with self.assertRaises(OSError):
+            quarantine.purge(fake, root=self.root)
+        self.assertTrue(os.path.exists(outside))
+
+    def test_failed_move_leaves_nothing_behind(self):
+        with mock.patch.object(quarantine.shutil, "move", side_effect=OSError("denied")):
+            with self.assertRaises(OSError):
+                quarantine.quarantine(self.victim, "evil", "test", root=self.root)
+        self.assertTrue(os.path.exists(self.victim))
+        self.assertEqual(os.listdir(self.root), [])
+
+    def test_every_quarantined_item_has_a_manifest(self):
+        with mock.patch.object(quarantine.json, "dump", side_effect=OSError("disk full")):
+            with self.assertRaises(OSError):
+                quarantine.quarantine(self.victim, "evil", "test", root=self.root)
+        self.assertTrue(os.path.exists(self.victim), "item stays put when the manifest can't be written")
+        self.assertEqual(os.listdir(self.root), [])
+
+    def test_restore_refuses_protected_location(self):
+        entry = quarantine.quarantine(self.victim, "evil", "test", root=self.root)
+        stored = entry.item_path
+        entry.original = "/usr/bin/evil-agent"
+        with self.assertRaises(OSError):
+            quarantine.restore(entry)
+        self.assertTrue(os.path.exists(stored))
+
+    def test_menu_restore_all(self):
+        quarantine.quarantine(self.victim, "evil", "test", root=self.root)
+        real_entries = quarantine.entries
+        with mock.patch.object(quarantine, "entries", lambda: real_entries(self.root)), \
+                mock.patch("builtins.input", return_value="r all"), mock.patch("builtins.print"):
+            quarantine.run_quarantine_menu()
+        self.assertTrue(os.path.exists(self.victim))
+        self.assertEqual(real_entries(self.root), [])
 
     def test_refuses_protected(self):
         with self.assertRaises(OSError):

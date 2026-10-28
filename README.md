@@ -19,6 +19,29 @@ codi
 You can also run one option directly: `codi cache`, `codi malware`, `codi checkup`,
 `codi quarantine`.
 
+## Quick start
+
+Codi needs **macOS** and **Python 3.8 or newer** (`python3 --version` to check).
+It has no dependencies to install.
+
+```
+git clone https://github.com/<your-username>/<repo-name>.git
+cd <repo-name>
+chmod +x codi
+./codi
+```
+
+To run it from anywhere, link the launcher into a folder on your `PATH`:
+
+```
+ln -s "$PWD/codi" /usr/local/bin/codi
+```
+
+> **Please read first:** Codi can move and permanently delete files. It always asks
+> before it does, and it never touches macOS system folders, but review every item
+> before you confirm. Back up your Mac (Time Machine) before your first cleanup.
+> Codi is a learning project, not a replacement for a full antivirus product.
+
 ## What each option does
 
 **1. Cache files.** Measures app caches in `~/Library/Caches` (Apple's own caches are
@@ -106,3 +129,13 @@ Run the tests: `python3 -I -m unittest discover -s tests`
 
 Zero Breach Toolkit is © archivegenocide.com, Apache 2.0. Codi calls it unchanged
 and does not redistribute it.
+
+## Contributing
+
+Issues and pull requests are welcome, especially new signatures for adware and
+unwanted programs (`codi_clean/signatures.py`) and bug reports with the exact
+command you ran. Please run the tests before opening a pull request.
+
+## License
+
+MIT. See [LICENSE](LICENSE). The software is provided as is, without warranty.

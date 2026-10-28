@@ -39,7 +39,11 @@ def _menu() -> int:
             return 0
         for key, _title, _hint, action in MENU:
             if choice == key:
-                action()
+                try:
+                    action()
+                except KeyboardInterrupt:
+                    ui.clear_status()
+                    print("\n  Stopped. Nothing further was changed.")
                 ui.ask(ui.dim("\n  Press Enter to return to the menu..."))
                 break
         else:
