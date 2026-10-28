@@ -25,8 +25,8 @@ Codi needs **macOS** and **Python 3.8 or newer** (`python3 --version` to check).
 It has no dependencies to install.
 
 ```
-git clone https://github.com/<your-username>/<repo-name>.git
-cd <repo-name>
+git clone https://github.com/AmrZoair1997/Codi-Clean.git
+cd Codi-Clean
 chmod +x codi
 ./codi
 ```
@@ -129,12 +129,6 @@ Run the tests: `python3 -I -m unittest discover -s tests`
 
 Zero Breach Toolkit is © archivegenocide.com, Apache 2.0. Codi calls it unchanged
 and does not redistribute it.
-
-## Contributing
-
-Issues and pull requests are welcome, especially new signatures for adware and
-unwanted programs (`codi_clean/signatures.py`) and bug reports with the exact
-command you ran. Please run the tests before opening a pull request.
 
 ## License
 
